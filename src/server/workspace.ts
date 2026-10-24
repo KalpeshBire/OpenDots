@@ -7,11 +7,13 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { validateLearningSettings } from '../shared/learning.js';
 import type { CallReceipt, Conversation, Dot, Space } from '../shared/types.js';
+import { SharedContextStore } from './shared-context-store.js';
 export class WorkspaceStore {
   private db: DatabaseSync;
   readonly pages: Pages;
   readonly computers: ComputerStore;
   readonly connections: ConnectionStore;
+  readonly sharedContexts: SharedContextStore;
   constructor(
     path: string,
     readonly ownerId: string,
@@ -57,6 +59,7 @@ export class WorkspaceStore {
     }
     this.computers = new ComputerStore(this.db);
     this.connections = new ConnectionStore(this.db);
+    this.sharedContexts = new SharedContextStore(this.db);
     this.pages = new Pages(this.db, (id) =>
       this.spaces().some((space) => space.id === id),
     );

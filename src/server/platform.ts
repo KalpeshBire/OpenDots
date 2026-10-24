@@ -22,12 +22,14 @@ import {
 import { validateRuntimeScope } from './runtime-scope.js';
 import { learningSelector } from './learning.js';
 import { SetupTelemetry } from './setup-telemetry.js';
+import { ContextExportService } from './context-export-service.js';
 export class Platform {
   private channelStartupFailed = false;
   readonly setupTelemetry: SetupTelemetry;
   readonly pages: PageService;
   readonly computers: ComputerService;
   readonly connections: ConnectionService;
+  readonly contextExport: ContextExportService;
   readonly intelligence?: CopilotKitIntelligence;
   readonly handler?: CopilotHonoApp;
   constructor(
@@ -46,6 +48,12 @@ export class Platform {
       this.requireReady();
       return this.intelligence!;
     });
+    this.contextExport = new ContextExportService(
+      workspace,
+      config,
+      workspace.sharedContexts,
+      () => this.intelligence,
+    );
     if (!config.intelligenceKey) return;
     this.intelligence = new CopilotKitIntelligence({
       apiKey: config.intelligenceKey,

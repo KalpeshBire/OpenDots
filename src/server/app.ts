@@ -10,6 +10,7 @@ import { configured, type Config } from './research.js';
 import type { Platform } from './platform.js';
 import { VoiceService } from './voice.js';
 import { workspaceRoutes } from './workspace-routes.js';
+import { contextRoutes } from './context-routes.js';
 const interval = z.number().int().min(60).max(31_536_000).nullable();
 export interface AppOptions {
   store: Store;
@@ -67,9 +68,12 @@ export function createApp({
     const allowedOrigins = new Set(origins ?? [new URL(c.req.url).origin]);
     if (requestOrigin && !allowedOrigins.has(requestOrigin))
       return c.json({ error: 'Cross-origin requests are not allowed.' }, 403);
-    if (c.req.header('sec-fetch-site') === 'cross-site')
+    const isPublicSharedContextGet =
+      requestUrl.pathname.startsWith('/api/shared-context/') &&
+      ['GET', 'HEAD'].includes(c.req.method);
+    if (!isPublicSharedContextGet && c.req.header('sec-fetch-site') === 'cross-site')
       return c.json({ error: 'Cross-site requests are not allowed.' }, 403);
-    if (ownerToken) {
+    if (ownerToken && !isPublicSharedContextGet) {
       const expected = Buffer.from(ownerToken);
       const supplied = Buffer.from(
         c.req.header('authorization')?.replace(/^Bearer /, '') ?? '',
@@ -95,6 +99,15 @@ export function createApp({
     app.route(
       '/api',
       connectionRoutes(platform.workspace, platform.connections),
+    );
+  if (platform)
+    app.route(
+      '/api',
+      contextRoutes(
+        platform.contextExport,
+        platform.workspace.sharedContexts,
+        platform.workspace,
+      ),
     );
   const voice = platform ? new VoiceService(platform) : undefined;
   if (platform && voice) app.route('/api', workspaceRoutes(platform, voice));

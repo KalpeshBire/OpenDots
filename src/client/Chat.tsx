@@ -24,6 +24,7 @@ import {
   Link2,
   Phone,
   PhoneOff,
+  Share2,
   Square,
   X,
 } from 'lucide-react';
@@ -49,6 +50,7 @@ export function Chat({
   onSaved,
   onSchedule,
   onComputer,
+  onShareContext,
 }: {
   thread: Conversation;
   dot: Dot;
@@ -60,6 +62,7 @@ export function Chat({
   onSaved: () => void;
   onSchedule: () => void;
   onComputer?: () => void;
+  onShareContext?: () => void;
 }) {
   const { agent, isReady } = useAgent({
     agentId: `chat-${thread.id}`,
@@ -312,6 +315,16 @@ export function Chat({
           >
             <Clock3 size={18} />
           </button>
+          {onShareContext && (
+            <button
+              className="icon-button"
+              aria-label="Share context with another AI"
+              title="Share context with another AI"
+              onClick={onShareContext}
+            >
+              <Share2 size={18} />
+            </button>
+          )}
           <button
             className={`icon-button ${voice.status === 'active' ? 'on-call' : ''}`}
             aria-label={

@@ -128,3 +128,4 @@ export interface WorkspaceState {
   setup: SetupStatus;
   calls: CallReceipt[];
 }
+export * from './context-share-types.js';

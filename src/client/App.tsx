@@ -48,6 +48,8 @@ import { TaskRow } from './TaskPresentation';
 import { TaskActions } from './TaskActions';
 import { WorkspaceDialog, type Dialog } from './WorkspaceDialog';
 import { submitComposerOnEnter } from './chat-composer';
+import { ShareContextModal } from './ShareContextModal';
+import { SharedContextImportView } from './SharedContextImportView';
 
 function describeFailure(error: unknown, fallback: string) {
   return {
@@ -62,9 +64,11 @@ export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceState>();
   const [selectedDot, setSelectedDot] = useState('');
   const [selectedThread, setSelectedThread] = useState<string>();
-  const [view, rawSetView] = useState<'chat' | 'tasks' | 'memories' | 'space'>(
-    'chat',
-  );
+  const [view, rawSetView] = useState<
+    'chat' | 'tasks' | 'memories' | 'space' | 'shared_context'
+  >('chat');
+  const [sharedContextToken, setSharedContextToken] = useState<string>();
+  const [shareThread, setShareThread] = useState<Conversation>();
   const dirtyPage = useRef(false);
   const [spaceId, setSpaceId] = useState('');
   const [pageId, setPageId] = useState<string>();
@@ -75,13 +79,20 @@ export function App() {
     if (dirtyPage.current && !window.confirm('Leave your unsaved page draft?'))
       return;
     dirtyPage.current = false;
-    if (next !== 'space')
+    if (next !== 'space' && next !== 'shared_context')
       history.replaceState(null, '', location.pathname + location.search);
     rawSetView(next);
   };
   useEffect(() => {
     let acceptedHash = location.hash;
     const navigate = () => {
+      const shareMatch = location.hash.match(/^#\/shared-context\/([^/]+)$/);
+      if (shareMatch) {
+        setSharedContextToken(shareMatch[1]);
+        rawSetView('shared_context');
+        setMobile(false);
+        return;
+      }
       const match = location.hash.match(
         /^#\/spaces\/([^/]+)(?:\/pages\/([^/]+))?$/,
       );
@@ -589,7 +600,26 @@ export function App() {
             All Dots are paused. Active compute stops and scheduled tasks wait.
           </div>
         )}
-        {view === 'space' ? (
+        {view === 'shared_context' && sharedContextToken ? (
+          <SharedContextImportView
+            token={sharedContextToken}
+            dots={workspace.dots}
+            onImported={(threadId, dotId, initialPrompt) => {
+              setSelectedDot(dotId);
+              setSelectedThread(threadId);
+              setPendingPrompt(initialPrompt);
+              rawSetView('chat');
+              setSharedContextToken(undefined);
+              history.replaceState(null, '', location.pathname + location.search);
+              void refresh();
+            }}
+            onCancel={() => {
+              rawSetView('chat');
+              setSharedContextToken(undefined);
+              history.replaceState(null, '', location.pathname + location.search);
+            }}
+          />
+        ) : view === 'space' ? (
           <SpaceWorkspace
             key={spaceId}
             space={
@@ -634,6 +664,7 @@ export function App() {
                   onSchedule={() =>
                     setDialog({ type: 'schedule', threadId: thread.id })
                   }
+                  onShareContext={() => setShareThread(thread)}
                 />
               ) : (
                 <div className="new-conversation">
@@ -951,6 +982,13 @@ export function App() {
           workspace={workspace}
           onClose={() => setDialog(undefined)}
           mutate={mutate}
+        />
+      )}
+      {shareThread && dot && (
+        <ShareContextModal
+          thread={shareThread}
+          dot={workspace?.dots.find((d) => d.id === shareThread.dotId) ?? dot}
+          onClose={() => setShareThread(undefined)}
         />
       )}
     </div>
