@@ -2,6 +2,7 @@ import { useEffect, useState, useId } from 'react';
 import {
   Check,
   Copy,
+  Download,
   ExternalLink,
   Loader2,
   Share2,
@@ -194,6 +195,34 @@ export function ShareContextModal({
     } finally {
       setRevoking(false);
     }
+  };
+
+  const handleDownload = (format: 'markdown' | 'json' = 'markdown') => {
+    if (!shareResult) return;
+    const isJson = format === 'json';
+    const content = isJson
+      ? JSON.stringify(shareResult.package, null, 2)
+      : shareResult.prepared?.clipboardPayload ||
+        shareResult.prepared?.formattedText ||
+        '';
+
+    const mimeType = isJson ? 'application/json' : 'text/markdown';
+    const extension = isJson ? 'json' : 'md';
+    const safeTitle = (thread.title || 'conversation')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .slice(0, 30);
+    const filename = `opendots-context-${safeTitle}-${Date.now()}.${extension}`;
+
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -536,6 +565,26 @@ export function ShareContextModal({
               >
                 {copiedText ? <Check size={16} /> : <Copy size={16} />}
                 <span>{copiedText ? 'Copied Prompt!' : 'Copy Context Prompt'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => handleDownload('markdown')}
+                title="Download formatted context prompt as Markdown file (.md)"
+              >
+                <Download size={16} />
+                <span>Download (.md)</span>
+              </button>
+
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => handleDownload('json')}
+                title="Download full structured context package as JSON (.json)"
+              >
+                <Download size={16} />
+                <span>Download JSON</span>
               </button>
 
               {shareResult.prepared?.directUrl && (

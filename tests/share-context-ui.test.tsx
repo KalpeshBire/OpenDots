@@ -12,22 +12,23 @@ import type { Conversation, Dot } from '../src/shared/types.js';
 
 const mockDot: Dot = {
   id: 'dot-1',
+  spaceId: 'space-1',
+  spaceIds: ['space-1'],
   name: 'CodeDot',
-  purpose: 'Software engineering assistant',
-  icon: 'terminal',
-  model: 'gpt-4o',
-  personality: 'Practical and concise',
-  computer: 'none',
+  instructions: 'Software engineering assistant',
+  researchAllowed: true,
+  memoryAllowed: true,
+  appsAllowed: false,
+  composioToolkits: [],
   createdAt: Date.now(),
-  updatedAt: Date.now(),
 };
 
 const mockThread: Conversation = {
   id: 'thread-123',
-  title: 'Refactoring Architecture',
   dotId: 'dot-1',
+  ownerId: 'owner-1',
+  title: 'Refactoring Architecture',
   createdAt: Date.now(),
-  updatedAt: Date.now(),
 };
 
 describe('Share Context UI Components', () => {

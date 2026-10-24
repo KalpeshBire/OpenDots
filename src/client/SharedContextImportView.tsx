@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Download,
   FileText,
   Loader2,
   MessageSquare,
@@ -64,6 +65,29 @@ export function SharedContextImportView({
       active = false;
     };
   }, [token]);
+
+  const handleDownloadJson = () => {
+    if (!shared) return;
+    const content = JSON.stringify(shared.package, null, 2);
+    const safeTitle = (
+      shared.package.conversation?.title ||
+      shared.package.source?.title ||
+      'shared-context'
+    )
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .slice(0, 30);
+    const filename = `opendots-${safeTitle}-${token.slice(0, 8)}.json`;
+    const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleImport = async () => {
     if (!targetDotId) return;
@@ -210,6 +234,15 @@ export function SharedContextImportView({
             </div>
 
             <div className="import-footer-actions">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={handleDownloadJson}
+                title="Download complete context package as JSON"
+              >
+                <Download size={16} />
+                <span>Download JSON</span>
+              </button>
               <button
                 type="button"
                 className="button-secondary"
